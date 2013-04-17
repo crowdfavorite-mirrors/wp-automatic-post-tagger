@@ -2,8 +2,8 @@
 /*
 Plugin Name: Automatic Post Tagger
 Plugin URI: http://wordpress.org/plugins/automatic-post-tagger/
-Description: This plugin automatically adds user-defined tags to posts.
-Version: 1.5
+Description: This plugin automatically adds user-defined tags to posts. <strong>This plugin has been modified by Crowd Favorite. Before upgrading, review notes and ensure functionality is preserved.</strong>
+Version: 1.5cf
 Author: Devtard
 Author URI: http://devtard.com
 License: GPLv2 or later
@@ -12,7 +12,7 @@ License: GPLv2 or later
 /*  Copyright 2012  Devtard  (email : devtard@gmail.com)
 
 	This program is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License, version 2, as 
+	it under the terms of the GNU General Public License, version 2, as
 	published by the Free Software Foundation.
 
 	This program is distributed in the hope that it will be useful,
@@ -80,7 +80,7 @@ function apt_get_plugin_version(){ //return plugin version
 #################### table creation function ####################
 
 function apt_create_table(){ //this functions defines the plugin table structure - it is called when the plugin is being activated
-	global $wpdb, 
+	global $wpdb,
 	$apt_table;
 
 	//this should prevent creating tables with different charset and collation
@@ -109,7 +109,7 @@ function apt_drop_table(){
 	global $wpdb,
 	$apt_table;
 
-	$wpdb->query('DROP TABLE '. $apt_table); 
+	$wpdb->query('DROP TABLE '. $apt_table);
 }
 #################################################################
 #################### activate function ##########################
@@ -285,7 +285,7 @@ function apt_update_plugin(){ //runs when all plugins are loaded (needs to be de
 			$apt_settings['apt_plugin_version'] = $apt_current_version; //update plugin version in DB
 
 			//update settings
-			update_option('automatic_post_tagger', $apt_settings); 
+			update_option('automatic_post_tagger', $apt_settings);
 
 		}//-if different versions
 	}//if current user can
@@ -356,7 +356,7 @@ function apt_plugin_action_links($links, $file){
 
 	if($file == $apt_plugin_basename){
  		$apt_settings_link = '<a href="'. admin_url('options-general.php?page=automatic-post-tagger') .'">' . __('Settings') . '</a>';
-		$links = array_merge($links, array($apt_settings_link)); 
+		$links = array_merge($links, array($apt_settings_link));
 	}
  	return $links;
 }
@@ -516,7 +516,7 @@ function apt_meta_box_create_new_tag(){ //save tag sent via meta box
 	apt_create_new_tag($_POST['apt_box_tag_name'],$_POST['apt_box_tag_related_words']);
 	die; //the AJAX script has to die or it will return exit(0)
 }
- 
+
 function apt_toggle_widget(){ //update visibility of widgets via AJAX
 	$apt_settings = get_option('automatic_post_tagger');
 	check_ajax_referer('apt_options_page_nonce', 'security');
@@ -597,8 +597,22 @@ function apt_print_sql_where_without_specified_statuses(){ //this prints part of
 		$apt_table_select_posts_with_definded_statuses = "AND ($apt_post_statuses_sql)";
 	}
 
-	//get all IDs with set post statuses
-	return 'WHERE post_type = \'post\' '. $apt_table_select_posts_with_definded_statuses;
+
+	/** CF MODIFIED SECTION TO ADD CUSTOM POST TYPE SUPPORT VIA FILTER **/
+	$included_post_types = apply_filters('apt_bulk_tagging_types', array('post'));
+	if (empty($included_post_types)) {
+		return "WHERE 1=0"; // Disable any further changes, as there are no allowed post types.
+	}
+	else {
+		global $wpdb;
+		foreach ($included_post_types as &$type) {
+			$type = $wpdb->prepare('%s', $type);
+		}
+	}
+
+	//get all IDs with set post statuses and types
+	return 'WHERE post_type IN ('.implode(', ', $included_post_types).') '. $apt_table_select_posts_with_definded_statuses;
+	/** END CF MODIFIED SECTION TO ADD CUSTOM POST TYPE SUPPORT VIA FILTER **/
 }
 
 function apt_bulk_tagging(){ //adds tags to multiple posts
@@ -769,7 +783,7 @@ function apt_single_post_tagging($post_id, $apt_dont_check_moron_scenarios = 0){
 			## CHECK FOR RELATED WORDS
 			$apt_table_row_related_words_count = substr_count($apt_table_cell[1], $apt_settings['apt_string_separator']) + 1; //variable prints number of related words in the current row that is being "browsed" by the while; must be +1 higher than the number of separators!
 
-			//resetting variables - this must be here or the plugin will add non-relevant tags 
+			//resetting variables - this must be here or the plugin will add non-relevant tags
 			$apt_occurrences_tag = 0;
 			$apt_occurrences_related_words = 0;
 
@@ -912,7 +926,7 @@ function apt_single_post_tagging($post_id, $apt_dont_check_moron_scenarios = 0){
 			if($apt_occurrences_related_words == 1 OR $apt_occurrences_tag == 1){ //tag or one of related_words has been found, add tag to array!
 //die("tag: ". stripslashes($apt_table_cell[0]) ."<br>rw found: ".$apt_occurrences_related_words ."<br> tag found: ".  $apt_occurrences_tag); //for debugging
 
-				//we need to check if the tag isn't already in the array of the current tags (don't worry about the temporary array for adding tags, only unique values are pushed in)	
+				//we need to check if the tag isn't already in the array of the current tags (don't worry about the temporary array for adding tags, only unique values are pushed in)
 				if($apt_settings['apt_handling_current_tags'] == 2 OR $apt_post_current_tag_count == 0){ //if we need to replace tags, don't check for the current tags or they won't be added again after deleting the old ones --- $apt_post_current_tag_count == 0 will work also for the "do nothing" option
 						array_push($apt_tags_to_add_array, $apt_table_cell[0]); //add tag to the array
 
@@ -981,7 +995,7 @@ function apt_create_new_tag($apt_tag_name, $apt_tag_related_words){
 		if($apt_table_tag_existence_check_results == 1){ //checking if the tag exists
 
 			echo $apt_message_html_prefix_error .'<b>Error:</b> Tag "<b>'. $apt_created_tag_trimmed .'</b>" couldn\'t be created, because it already exists!'. $apt_message_html_suffix;
-		} 
+		}
 		else{ //if the tag is not in DB, create one
 
 			$apt_created_related_words_trimmed = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $apt_tag_related_words); //replacing multiple whitespace characters with a space (we could replace them completely, but that might annoy users)
@@ -1388,7 +1402,7 @@ if(isset($_POST['apt_import_existing_tags_button'])){ //import current tags
 	if(wp_verify_nonce($_POST['apt_import_existing_tags_hash'],'apt_import_existing_tags_nonce')){ //save only if the nonce was verified
 
 		$apt_table_select_current_tags_sql = 'SELECT name FROM '. $wpdb->terms .' NATURAL JOIN '. $wpdb->term_taxonomy .' WHERE taxonomy="post_tag"'; //select all existing tags
-		$apt_table_select_current_tags_results = $wpdb->get_results($apt_table_select_current_tags_sql, ARRAY_N); //ARRAY_N - result will be output as a numerically indexed array of numerically indexed arrays. 
+		$apt_table_select_current_tags_results = $wpdb->get_results($apt_table_select_current_tags_sql, ARRAY_N); //ARRAY_N - result will be output as a numerically indexed array of numerically indexed arrays.
 		$apt_currently_imported_tags = 0; //this will be used to determine how many tags were imported
 
 
@@ -1573,7 +1587,7 @@ if(isset($_POST['apt_bulk_tagging_button'])){
 
 		//I wanted to add there conditions for checking if an error occured to stop other conditions from executing but it is a bad idea
 		//because then if a user makes multiple mistakes he won't be notified about them
-	
+
 		if(ctype_digit($_POST['apt_bulk_tagging_posts_per_cycle'])){ //value must be natural
 			$apt_settings['apt_bulk_tagging_posts_per_cycle'] = $_POST['apt_bulk_tagging_posts_per_cycle'];
 			update_option('automatic_post_tagger', $apt_settings); //save settings
@@ -1713,7 +1727,7 @@ if(isset($_POST['apt_bulk_tagging_button'])){
 					<p>Thank you. <em>-- Devtard</em></p>
 				</div>
 			</div><!-- //-postbox -->
-			
+
 			<!-- postbox -->
 			<div class="postbox">
 				<h3 class="hndle"><span>Recent contributions <!--<span class="apt_float_right"><small><a href="http://wordpress.org/plugins/automatic-post-tagger/other_notes">Full list</a></small></span>--></span></h3>
@@ -1846,21 +1860,21 @@ if(isset($_POST['apt_bulk_tagging_button'])){
 
 									<!-- TODO v1.6 <label for="apt_miscellaneous_minimum_keyword_occurrence">Minimum keyword occurrence:</label> <input type="text" name="apt_miscellaneous_minimum_keyword_occurrence" id="apt_miscellaneous_minimum_keyword_occurrence" value="?php echo $apt_settings['apt_miscellaneous_minimum_keyword_occurrence']; ?>" maxlength="10" size="3"> <small><em>(keywords representing tags that occur less often won't be added as tags)</em></small><br /> -->
 									<!-- TODO v1.6 <input type="checkbox" name="apt_miscellaneous_add_most_frequent_tags_first" id="apt_miscellaneous_add_most_frequent_tags_first" ?php if($apt_settings['apt_miscellaneous_add_most_frequent_tags_first'] == 1) echo 'checked="checked"'; ?>> <label for="apt_miscellaneous_add_most_frequent_tags_first">Add most frequent tags first <small><em>(useful for adding most relevant tags before the max. tag limit is hit)</em></small></label><br /> -->
-		 
+
 						</table>
 
 						<p class="submit">
-							<input class="button-primary" type="submit" name="apt_save_settings_button" value=" Save settings "> 
+							<input class="button-primary" type="submit" name="apt_save_settings_button" value=" Save settings ">
 							<input class="button apt_red_background" type="submit" name="apt_restore_default_settings_button" onClick="return confirm('Do you really want to reset all settings to default values (including deleting all tags)?\nYou might want to create a backup first.')" value=" Restore default settings ">
 						</p>
 					</div>
 				</div>
-	
+
 				<?php wp_nonce_field('apt_save_settings_nonce','apt_save_settings_hash'); ?>
 				<?php wp_nonce_field('apt_restore_default_settings_nonce','apt_restore_default_settings_hash'); ?>
 				</form>
 				<!-- //-postbox -->
-		
+
 				<!-- postbox -->
 				<form action="<?php echo admin_url('options-general.php?page=automatic-post-tagger'); ?>" method="post">
 				<div class="postbox">
@@ -1880,7 +1894,7 @@ if(isset($_POST['apt_bulk_tagging_button'])){
 
 						<p>
 							<input class="button" type="submit" name="apt_create_new_tag_button" value=" Create new tag ">
-							<span class="apt_float_right"><small><b>Tip:</b> You can also create tags directly from a widget located next to the post editor.</small></span>		
+							<span class="apt_float_right"><small><b>Tip:</b> You can also create tags directly from a widget located next to the post editor.</small></span>
 						</p>
 					</div>
 				</div>
@@ -1931,7 +1945,7 @@ if(isset($_POST['apt_bulk_tagging_button'])){
 						<?php
 						//for retrieving all tags and their count
 						$apt_all_table_rows_sql = "SELECT * FROM $apt_table ORDER BY tag";
-						$apt_all_table_rows_results = $wpdb->get_results($apt_all_table_rows_sql, ARRAY_A); //ARRAY_A - result will be output as an numerically indexed array of associative arrays, using column names as keys. 
+						$apt_all_table_rows_results = $wpdb->get_results($apt_all_table_rows_sql, ARRAY_A); //ARRAY_A - result will be output as an numerically indexed array of associative arrays, using column names as keys.
 						$apt_all_table_rows_count = count($apt_all_table_rows_results); //when we already did the query, why not just count live results instead of retrieving it from the option apt_stats_current_tags?
 
 						if($apt_all_table_rows_count == 0){
@@ -2006,7 +2020,7 @@ if(isset($_POST['apt_bulk_tagging_button'])){
 
 
 							<p class="submit">
-								<input class="button" type="submit" name="apt_bulk_tagging_button" onClick="return confirm('Do you really want to proceed?\nAny changes can\'t be reversed.')" value=" Assign tags "> 
+								<input class="button" type="submit" name="apt_bulk_tagging_button" onClick="return confirm('Do you really want to proceed?\nAny changes can\'t be reversed.')" value=" Assign tags ">
 							</p>
 						</div>
 					</div>
