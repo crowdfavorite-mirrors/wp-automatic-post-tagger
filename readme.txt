@@ -102,6 +102,9 @@ Do you want to have your link displayed here? [Read this &raquo;](http://devtard
 = Other =
 
 == Changelog ==
+= 1.4cf =
+* New feature: Custom post type support via filter
+
 = 1.4 =
 * New feature: Customizable bulk tagging
 * New feature: Users can hide widgets on the options page
