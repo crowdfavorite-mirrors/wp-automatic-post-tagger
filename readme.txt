@@ -12,7 +12,7 @@ This plugin automatically adds user-defined tags to posts.
 == Description ==
 With APT you won't have to manually add tags ever again. You just have to create a list of tags with related words for each of them and you are done. This plugin will **add relevant tags automatically** when a post is published or updated. It is perfect for autoblogs and lazy bloggers. :)
 
-= Features = 
+= Features =
 * Automatically adds tags to posts according to their title, content and excerpt
 * Tags can be added when different user-defined keywords are found
 * Smart wildcard representation of any alphanumeric characters
@@ -57,6 +57,9 @@ APT stores tags and related words in a table called "wp_apt_tags". Plugin settin
 All plugin data will be automatically removed from your database after you delete the plugin via your administration interface.
 
 == Changelog ==
+= 1.5cf =
+* New feature: Custom post type support via filter
+
 = 1.5 =
 * New feature: Custom string separator
 * New feature: Import/export of "real" CSV files (the script no longer uses a custom file structure)
@@ -148,7 +151,7 @@ All plugin data will be automatically removed from your database after you delet
 * New feature: Option for replacing whitespace characters with spaces
 * New feature: Option for stripping PHP/HTML tags
 * Fixed: Bug causing adding duplicate tags to an array (resulting in less space for other tags if the tag limit is set too low)
-* Fixed: Bug preventing the script from calculating the max. number of tags that can be added to a post in the case when we don't want to append tags 
+* Fixed: Bug preventing the script from calculating the max. number of tags that can be added to a post in the case when we don't want to append tags
 * Fixed: Pressing enter when typing in the APT widget doesn't submit the form anymore
 * Changed: APT is searching for tags only when no substrings were found (more efficient)
 * Changed: Update messages now use htmlspecialchars() to display names of tags and related words
