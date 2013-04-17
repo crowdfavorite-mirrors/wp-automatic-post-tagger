@@ -2,8 +2,8 @@
 /*
 Plugin Name: Automatic Post Tagger
 Plugin URI: http://wordpress.org/extend/plugins/automatic-post-tagger
-Description: This plugin automatically adds user-defined tags to posts.
-Version: 1.4
+Description: This plugin automatically adds user-defined tags to posts. <strong>This plugin has been modified by Crowd Favorite. Before upgrading, review notes and ensure functionality is preserved.</strong>
+Version: 1.4cf
 Author: Devtard
 Author URI: http://devtard.com
 License: GPLv2 or later
@@ -557,6 +557,7 @@ function apt_uninstall_plugin(){ //runs after uninstalling of the plugin
 ########################## TAGGING ENGINEs ######################
 #################################################################
 function apt_print_sql_where_without_specified_statuses(){
+	global $wpdb;
 	$apt_post_statuses_array = explode(';', get_option('apt_bulk_tagging_statuses')); //retrieve saved post statuses to an array
 
 	//if no post statuses are set, don't add them to the SQL query
@@ -572,9 +573,21 @@ function apt_print_sql_where_without_specified_statuses(){
 		//this is the final part that will be added to the SQL query
 		$apt_table_select_posts_with_definded_statuses = "AND ($apt_post_statuses_sql)";
 	}
-
-	//get all IDs with set post statuses
-	return "WHERE post_type = 'post' $apt_table_select_posts_with_definded_statuses";
+	
+	/** CF MODIFIED SECTION TO ADD CUSTOM POST TYPE SUPPORT VIA FILTER **/
+	$included_post_types = apply_filters('apt_bulk_tagging_types', array('post'));
+	if (empty($included_post_types)) {
+		return "WHERE 1=0"; // Disable any further changes, as there are no allowed post types.
+	}
+	else {
+		foreach ($included_post_types as &$type) {
+			$type = $wpdb->prepare('%s', $type);
+		}
+	}
+	
+	//get all IDs with set post statuses and types
+	return 'WHERE post_type IN ('.implode(', ', $included_post_types).') '.$apt_table_select_posts_with_defined_statuses;
+	/** END CF MODIFIED SECTION TO ADD CUSTOM POST TYPE SUPPORT VIA FILTER **/
 }
 
 function apt_bulk_tagging(){
