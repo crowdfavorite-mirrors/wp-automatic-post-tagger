@@ -578,7 +578,7 @@ function apt_meta_box_content(){ //meta box content
 function apt_print_sql_where_without_specified_statuses(){ //this prints part of a SQL command that is used for terieving post IDs for bulk tagging - it returns IDs of posts without specified post statuses
 	$apt_settings = get_option('automatic_post_tagger');
 
-	$apt_table_select_posts_with_definded_statuses = ''; //this declaration is here to prevent throwing the notice "Undefined variable"
+	$apt_table_select_posts_with_defined_statuses = ''; //this declaration is here to prevent throwing the notice "Undefined variable"
 
 	//if no post statuses are set, don't add them to the SQL query
 	if($apt_settings['apt_bulk_tagging_statuses'] != ''){
@@ -594,7 +594,7 @@ function apt_print_sql_where_without_specified_statuses(){ //this prints part of
 		$apt_post_statuses_sql = substr($apt_post_statuses_sql, 0, -5);
 
 		//this is the final part that will be added to the SQL query
-		$apt_table_select_posts_with_definded_statuses = "AND ($apt_post_statuses_sql)";
+		$apt_table_select_posts_with_defined_statuses = "AND ($apt_post_statuses_sql)";
 	}
 
 
@@ -611,7 +611,7 @@ function apt_print_sql_where_without_specified_statuses(){ //this prints part of
 	}
 
 	//get all IDs with set post statuses and types
-	return 'WHERE post_type IN ('.implode(', ', $included_post_types).') '. $apt_table_select_posts_with_definded_statuses;
+	return 'WHERE post_type IN ('.implode(', ', $included_post_types).') '. $apt_table_select_posts_with_defined_statuses;
 	/** END CF MODIFIED SECTION TO ADD CUSTOM POST TYPE SUPPORT VIA FILTER **/
 }
 
